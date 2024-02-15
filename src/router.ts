@@ -1,19 +1,19 @@
-import { IncomingMessage, STATUS_CODES, ServerResponse } from "http"
-import qs, { ParsedUrlQuery } from "querystring"
+import { IncomingMessage, STATUS_CODES, ServerResponse } from "node:http"
+import qs, { ParsedUrlQuery } from "node:querystring"
 
 type RouteParam = {
     key: string
     position: number
 }
 
-type Request = IncomingMessage & {
+export type Request = IncomingMessage & {
     params: Record<string, string>
     query: ParsedUrlQuery
 }
 
-type Response = ServerResponse<Request>
+export type Response = ServerResponse<Request>
 
-type Handler = (req: Request, res: Response) => void | Promise<void>
+export type Handler = (req: Request, res: Response) => void | Promise<void>
 
 class Route {
     path: string
@@ -21,16 +21,17 @@ class Route {
     handlers: Record<string, Handler>
 
     constructor(path: string) {
-        this.params = Route.#getParams(path)
+        this.path = path
+        this.params = Route.getParams(path)
         this.handlers = {}
     }
 
-    static #getParams(path: string): RouteParam[] {
+    private static getParams(path: string): RouteParam[] {
         const parts = path.split("/").filter(Boolean)
         const params: RouteParam[] = []
 
         for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
+            const part = parts[i]
             if (part.startsWith(":")) {
                 params.push({ key: part.slice(1), position: i })
             }
@@ -49,7 +50,7 @@ class Route {
         const params: Record<string, string> = {}
 
         for (let i = 0; i < this.params.length; i++) {
-            const param = this.params[i];
+            const param = this.params[i]
             params[param.key] = parts[param.position]
         }
 
@@ -58,22 +59,22 @@ class Route {
 }
 
 export class Router {
-    #routes: Record<string, Route>
+    private routes: Record<string, Route>
 
     constructor() {
-        this.#routes = {}
+        this.routes = {}
         this.requestListener = this.requestListener.bind(this)
     }
 
-    #addRoute(method: string, path: string, handler: Handler) {
-        if (this.#routes[path]) {
-            this.#routes[path].addHandler(method, handler)
+    private addRoute(method: string, path: string, handler: Handler) {
+        if (this.routes[path]) {
+            this.routes[path].addHandler(method, handler)
         } else {
-            this.#routes[path] = new Route(path).addHandler(method, handler)
+            this.routes[path] = new Route(path).addHandler(method, handler)
         }
     }
 
-    #pathMatches(url: string, path: string) {
+    private pathMatches(url: string, path: string) {
         const urlParts = url.split("/").filter(Boolean)
         const pathParts = path.split("/").filter(Boolean)
 
@@ -106,23 +107,23 @@ export class Router {
     }
 
     DELETE(path: string, handler: Handler) {
-        this.#addRoute("DELETE", path, handler)
+        this.addRoute("DELETE", path, handler)
     }
 
     GET(path: string, handler: Handler) {
-        this.#addRoute("GET", path, handler)
+        this.addRoute("GET", path, handler)
     }
 
     PATCH(path: string, handler: Handler) {
-        this.#addRoute("PATCH", path, handler)
+        this.addRoute("PATCH", path, handler)
     }
 
     POST(path: string, handler: Handler) {
-        this.#addRoute("POST", path, handler)
+        this.addRoute("POST", path, handler)
     }
 
     PUT(path: string, handler: Handler) {
-        this.#addRoute("PUT", path, handler)
+        this.addRoute("PUT", path, handler)
     }
 
     requestListener(req: IncomingMessage, res: ServerResponse) {
@@ -134,12 +135,12 @@ export class Router {
         let params: Record<string, string> = {}
         let query: ParsedUrlQuery = {}
 
-        for (const path in this.#routes) {
-            if (this.#pathMatches(url, path)) {
-                if (method in this.#routes[path].handlers) {
-                    params = this.#routes[path].getParamValues(url)
+        for (const path in this.routes) {
+            if (this.pathMatches(url, path)) {
+                if (method in this.routes[path].handlers) {
+                    params = this.routes[path].getParamValues(url)
                     query = qs.parse(querystring)
-                    handler = this.#routes[path].handlers[method]
+                    handler = this.routes[path].handlers[method]
                 } else {
                     handler = this.methodNotAllowedHandler
                 }
@@ -152,6 +153,7 @@ export class Router {
 
         const request = Object.assign(req, { params, query }) as Request
         const response = res as Response
+
         handler?.call(this, request, response)
     }
 }
