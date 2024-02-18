@@ -1,5 +1,4 @@
 import { IncomingMessage, STATUS_CODES, ServerResponse } from "node:http"
-import qs, { ParsedUrlQuery } from "node:querystring"
 
 type RouteParam = {
     key: string
@@ -7,8 +6,8 @@ type RouteParam = {
 }
 
 export type Request = IncomingMessage & {
-    params: Record<string, string>
-    query: ParsedUrlQuery
+    params: Map<string, string>
+    query: URLSearchParams
 }
 
 export type Response = ServerResponse<Request>
@@ -47,11 +46,11 @@ class Route {
 
     getParamValues(url: string) {
         const parts = url.split("/").filter(Boolean)
-        const params: Record<string, string> = {}
+        const params: Map<string, string> = new Map()
 
         for (let i = 0; i < this.params.length; i++) {
             const param = this.params[i]
-            params[param.key] = parts[param.position]
+            params.set(param.key, parts[param.position])
         }
 
         return params
@@ -87,7 +86,7 @@ export class Router {
             if (pathParts[i].startsWith(":")) {
                 matchingParts.push(true)
             } else {
-                matchingParts.push(pathParts[i] === urlParts[i])
+                matchingParts.push(pathParts[i].toLowerCase() === urlParts[i].toLowerCase())
             }
         }
 
@@ -130,30 +129,28 @@ export class Router {
         const [url, querystring] = req.url?.split("?") || "/"
         const method = req.method || "GET"
 
-        let handler: Handler | undefined
+        let handler: Handler = this.notFoundHandler
 
-        let params: Record<string, string> = {}
-        let query: ParsedUrlQuery = {}
+        let params: Map<string, string> = new Map()
+        let query: URLSearchParams = new URLSearchParams()
 
         for (const path in this.routes) {
             if (this.pathMatches(url, path)) {
                 if (method in this.routes[path].handlers) {
                     params = this.routes[path].getParamValues(url)
-                    query = qs.parse(querystring)
+                    query = new URLSearchParams(querystring)
                     handler = this.routes[path].handlers[method]
                 } else {
                     handler = this.methodNotAllowedHandler
                 }
 
                 break
-            } else {
-                handler = this.notFoundHandler
             }
         }
 
         const request = Object.assign(req, { params, query }) as Request
         const response = res as Response
 
-        handler?.call(this, request, response)
+        handler.call(this, request, response)
     }
 }
