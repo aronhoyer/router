@@ -72,15 +72,17 @@ export class Router {
             const parts = path.split("/")
 
             for (let i = 0; i < parts.length; i++) {
-                const part = parts[i];
+                const part = parts[i]
 
                 for (let j = 0; j < route.children.length; j++) {
-                    const child = route.children[j];
+                    const child = route.children[j]
 
                     if (
-                        part.toLowerCase() === child.basename.toLowerCase()
-                            || child.basename.startsWith(":") && child.params.find((param) => param.position === i)
-                            || child.basename.startsWith("*") && child.params.find((param) => param.position === i)
+                        part.toLowerCase() === child.basename.toLowerCase() ||
+                        (child.basename.startsWith(":") &&
+                            child.params.find((param) => param.position === i)) ||
+                        (child.basename.startsWith("*") &&
+                            child.params.find((param) => param.position === i))
                     ) {
                         route = child
                         break

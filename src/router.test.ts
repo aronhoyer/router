@@ -11,32 +11,32 @@ type Response = {
 }
 
 function request(url: string, method?: string): Promise<Response> {
-	return new Promise((resolve, reject) => {
-		const req = http.request(url, { method: method || "GET" }, (res) => {
-			res.on("error", reject)
+    return new Promise((resolve, reject) => {
+        const req = http.request(url, { method: method || "GET" }, (res) => {
+            res.on("error", reject)
 
             let data = ""
-			res.on("data", (c) => {
+            res.on("data", (c) => {
                 data += c
-			})
+            })
 
-			res.on("end", () => {
-				resolve({
+            res.on("end", () => {
+                resolve({
                     headers: res.headers,
                     statusCode: res.statusCode,
                     statusMessage: res.statusMessage,
                     data,
                 })
-			})
-		})
+            })
+        })
 
-		req.on("error", reject)
-		req.end()
-	})
+        req.on("error", reject)
+        req.end()
+    })
 }
 
 describe("Router", () => {
-    let server: Server|undefined
+    let server: Server | undefined
 
     before(() => {
         const router = new Router()
@@ -101,16 +101,10 @@ describe("Router", () => {
     })
 
     test("http verbs", async (t) => {
-        const verbs = [
-            "GET",
-            "POST",
-            "PATCH",
-            "PUT",
-            "DELETE",
-        ]
+        const verbs = ["GET", "POST", "PATCH", "PUT", "DELETE"]
 
         for (let i = 0; i < verbs.length; i++) {
-            const verb = verbs[i];
+            const verb = verbs[i]
             await t.test(verb, async () => {
                 const res = await request(`http://127.0.0.1:42069/${verb}`, verb)
                 assert.equal(res.statusCode, 200)
