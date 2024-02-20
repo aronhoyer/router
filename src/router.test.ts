@@ -42,23 +42,23 @@ describe("Router", () => {
         const router = new Router()
 
         router.GET("/get", (_, res) => {
-            res.end()
+            res.end("GET")
         })
 
         router.POST("/post", (_, res) => {
-            res.end()
+            res.end("POST")
         })
 
         router.PATCH("/patch", (_, res) => {
-            res.end()
+            res.end("PATCH")
         })
 
         router.PUT("/put", (_, res) => {
-            res.end()
+            res.end("PUT")
         })
 
         router.DELETE("/delete", (_, res) => {
-            res.end()
+            res.end("DELETE")
         })
 
         router.GET("/books", (req, res) => {
@@ -67,6 +67,10 @@ describe("Router", () => {
 
         router.GET("/books/:id", (req, res) => {
             res.end(req.params.get("id"))
+        })
+
+        router.GET("/a/:b/c/:d", (req, res) => {
+            res.end(`${req.params.get("b")} ${req.params.get("d")}`)
         })
 
         server = http.createServer(router.requestListener)
@@ -110,6 +114,7 @@ describe("Router", () => {
             await t.test(verb, async () => {
                 const res = await request(`http://127.0.0.1:42069/${verb}`, verb)
                 assert.equal(res.statusCode, 200)
+                assert.equal(res.data, verb)
             })
         }
     })
@@ -123,6 +128,12 @@ describe("Router", () => {
         const res = await request("http://127.0.0.1:42069/books/abc123")
         assert.equal(res.statusCode, 200)
         assert.equal(res.data, "abc123")
+    })
+
+    test("nested url params are accepted", async () => {
+        const res = await request("http://127.0.0.1:42069/a/b/c/d")
+        assert.equal(res.statusCode, 200)
+        assert.equal(res.data, "b d")
     })
 
     test("url search params are parsed", async () => {
