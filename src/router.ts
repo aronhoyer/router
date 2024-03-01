@@ -1,73 +1,74 @@
-import { IncomingMessage, STATUS_CODES, ServerResponse } from "node:http"
-import { basename, extname } from "node:path"
+import { IncomingMessage, STATUS_CODES, ServerResponse } from 'node:http';
+import { basename, extname } from 'node:path';
 
 type Request = IncomingMessage & {
-    params: Map<string, string>
-    query: URLSearchParams
-    filename: string
-}
+    params: Map<string, string>;
+    query: URLSearchParams;
+    filename: string;
+};
 
-type Response = ServerResponse<Request>
+type Response = ServerResponse<Request>;
 
-type Handler = (req: Request, res: Response) => void | Promise<void>
+type Handler = (req: Request, res: Response) => void | Promise<void>;
 
 class Route {
     // the path is a single segment of the provided path
     // for example, if the path is /api/v1/users, the first segment is api and the second is v1
-    path: string
-    params: { key: string; position: number }[]
+    path: string;
+    params: { key: string; position: number }[];
 
     // handler is called when the route is matched
     // if a route has a handler, it is a leaf node
     // if a route does not have a handler, it is an internal node
     // internal nodes are used to match nested routes
-    handler?: Handler
+    handler?: Handler;
 
-    children: Route[]
+    children: Route[];
 
     // priority is used to determine the order of the routes
     // routes with higher priority are matched first to ensure that
     // deep traversal is prioritized over shallow traversal
     // dispite the fact that search is breadth-first
-    priority: number
+    priority: number;
 
     constructor(path: string, handler?: Handler) {
-        this.path = path
-        this.handler = handler
-        this.children = []
-        this.priority = 0
+        this.path = path;
+        this.handler = handler;
+        this.children = [];
+        this.priority = 0;
     }
 }
 
 export class Router {
-    trees: Record<string, Route>
+    trees: Record<string, Route>;
 
     constructor() {
-        this.trees = {}
-        this.requestListener = this.requestListener.bind(this)
+        this.trees = {};
+        this.requestListener = this.requestListener.bind(this);
     }
 
     #add(method: string, path: string, handler: Handler) {
-        let curr = this.trees[method]
+        let curr = this.trees[method];
 
         if (!curr) {
-            this.trees[method] = curr = new Route("")
+            this.trees[method] = curr = new Route('');
         }
 
-        const params = []
+        const params = [];
 
         if (path === curr.path) {
-            curr.handler = handler
+            curr.handler = handler;
         } else {
             // increment the priority of the root node
-            curr.priority++
+            // is this strictly necessary? ¯\_(ツ)_/¯
+            curr.priority++;
 
-            const segments = path.split("/").filter(Boolean)
+            const segments = path.split('/').filter(Boolean);
             for (let i = 0; i < segments.length; i++) {
-                const segment = segments[i]
+                const segment = segments[i];
 
-                const child = curr.children.find((c) => c.path === segment)
-                const route = new Route(segment)
+                const child = curr.children.find((c) => c.path === segment);
+                const route = new Route(segment);
 
                 // could (read "should") probably find a different, more memory efficient way to do this
                 // but that's for future me to figure out (smile)
@@ -81,120 +82,120 @@ export class Router {
                 // consuming at runtime and at the cost of response time.
                 //
                 // so fuck your ram
-                if (segment.startsWith(":")) {
-                    params.push({ key: segment.slice(1), position: i })
+                if (segment.startsWith(':')) {
+                    params.push({ key: segment.slice(1), position: i });
                 }
 
                 if (!child) {
-                    curr.children.push(route)
-                    curr = route
+                    curr.children.push(route);
+                    curr = route;
                 } else {
-                    curr = child
+                    curr = child;
                 }
 
-                curr.priority++
-                curr.children.sort((a, b) => b.priority - a.priority)
+                curr.priority++;
+                curr.children.sort((a, b) => b.priority - a.priority);
             }
 
-            curr.handler = handler
-            curr.params = params
+            curr.handler = handler;
+            curr.params = params;
         }
     }
 
     #find(method: string, path: string): Route | undefined {
-        const segments = path.split("/").filter(Boolean)
-        const matchingSegmets: string[] = []
+        const segments = path.split('/').filter(Boolean);
+        const matchingSegmets: string[] = [];
 
-        const q = [this.trees[method] || new Route("")]
-        let curr: Route | undefined
+        const q = [this.trees[method] || new Route('')];
+        let curr: Route | undefined;
 
-        let i = 0
+        let i = 0;
         while (q.length) {
-            curr = q.shift()
+            curr = q.shift();
 
             if (!segments[i]) {
-                break
+                break;
             }
 
             for (let j = 0; j < curr.children.length; j++) {
-                const child = curr.children[j]
+                const child = curr.children[j];
 
                 if (
-                    child.path.startsWith(":") ||
-                    child.path.startsWith("*") ||
+                    child.path.startsWith(':') ||
+                    child.path.startsWith('*') ||
                     child.path === segments[i]
                 ) {
-                    q.push(child)
-                    matchingSegmets.push(segments[i])
+                    q.push(child);
+                    matchingSegmets.push(segments[i]);
                 }
             }
 
-            i++
+            i++;
         }
 
-        return matchingSegmets.join("/") === segments.join("/") ? curr : undefined
+        return matchingSegmets.join('/') === segments.join('/') ? curr : undefined;
     }
 
     notFoundHandler(req: Request, res: Response) {
-        res.statusCode = 404
-        res.statusMessage = STATUS_CODES[404]
-        res.end()
+        res.statusCode = 404;
+        res.statusMessage = STATUS_CODES[404];
+        res.end();
     }
 
     methodNotAllowedHandler(req: Request, res: Response) {
-        res.statusCode = 405
-        res.statusMessage = STATUS_CODES[405]
-        res.end()
+        res.statusCode = 405;
+        res.statusMessage = STATUS_CODES[405];
+        res.end();
     }
 
     get(path: string, handler: Handler) {
-        this.#add("get", path, handler)
+        this.#add('get', path, handler);
     }
 
     post(path: string, handler: Handler) {
-        this.#add("post", path, handler)
+        this.#add('post', path, handler);
     }
 
     put(path: string, handler: Handler) {
-        this.#add("put", path, handler)
+        this.#add('put', path, handler);
     }
 
     delete(path: string, handler: Handler) {
-        this.#add("delete", path, handler)
+        this.#add('delete', path, handler);
     }
 
     requestListener(req: IncomingMessage, res: ServerResponse) {
-        const [url = "", query = ""] = req.url.split("?")
-        const method = req.method.toLowerCase()
+        const [url = '', query = ''] = req.url.split('?');
+        const method = req.method.toLowerCase();
 
-        const route = this.#find(method, url)
+        const route = this.#find(method, url);
 
-        ;(req as Request).params = new Map<string, string>()
-        ;(req as Request).query = new URLSearchParams(query)
-        ;(req as Request).filename = ""
+        (req as Request).params = new Map<string, string>();
+        (req as Request).query = new URLSearchParams(query);
+        (req as Request).filename = '';
 
         if (!route || !route.handler) {
-            const methods = Object.keys(this.trees).filter((m) => m !== method)
+            const methods = Object.keys(this.trees).filter((m) => m !== method);
             for (let i = 0; i < methods.length; i++) {
-                const found = this.#find(methods[i], url)
+                const found = this.#find(methods[i], url);
                 if (found) {
-                    return this.methodNotAllowedHandler.call(null, req as Request, res as Response)
+                    return this.methodNotAllowedHandler.call(null, req as Request, res as Response);
                 }
             }
 
-            return this.notFoundHandler.call(null, req as Request, res as Response)
+            return this.notFoundHandler.call(null, req as Request, res as Response);
         }
 
-        const urlSegments = url.split("/").filter(Boolean)
+        const urlSegments = url.split('/').filter(Boolean);
         for (let i = 0; i < route.params.length; i++) {
-            const param = route.params[i]
-            ;(req as Request).params.set(param.key, urlSegments[param.position])
+            const param = route.params[i];
+            (req as Request).params.set(param.key, urlSegments[param.position]);
         }
 
-        if (route.path.startsWith("*")) {
-            ;(req as Request).filename = extname(url) === extname(route.path) ? basename(url) : ""
+        if (route.path.startsWith('*')) {
+            (req as Request).filename = extname(url) === extname(route.path) ? basename(url) : '';
         }
 
-        route.handler.call(null, req as Request, res as Response)
+        route.handler.call(null, req as Request, res as Response);
     }
 }
