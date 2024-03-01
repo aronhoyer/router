@@ -13,8 +13,8 @@
   },
   "lint-staged": {
     "**/*.{t,j}s": [
-      "eslint",
-      "prettier --write"
+      "prettier --write",
+      "eslint"
     ]
   },
   "keywords": [],
