@@ -25,10 +25,10 @@ class Route {
 
     children: Route[];
 
-    // priority is used to determine the order of the routes
-    // routes with higher priority are matched first to ensure that
-    // deep traversal is prioritized over shallow traversal
-    // dispite the fact that search is breadth-first
+    // priority is used to determine the order of the routes.
+    // routes with higher priority are matched first to ensure that.
+    // deep traversal is prioritized over shallow traversal.
+    // TODO: update priority is incremented only when a sub-route has a handler.
     priority: number;
 
     constructor(path: string, handler?: Handler) {
@@ -103,6 +103,10 @@ export class Router {
     }
 
     #find(method: string, path: string): Route | undefined {
+        // breadth first search to find route whose route and method matches incoming request.
+        // curr.children are sorted by how many children each child has.
+        // this is done in an effort to check the longest path first.
+
         const segments = path.split('/').filter(Boolean);
         const matchingSegmets: string[] = [];
 
