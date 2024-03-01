@@ -40,18 +40,18 @@ class Route {
 }
 
 export class Router {
-    trees: Record<string, Route>;
+    #trees: Record<string, Route>;
 
     constructor() {
-        this.trees = {};
+        this.#trees = {};
         this.requestListener = this.requestListener.bind(this);
     }
 
     #add(method: string, path: string, handler: Handler) {
-        let curr = this.trees[method];
+        let curr = this.#trees[method];
 
         if (!curr) {
-            this.trees[method] = curr = new Route('');
+            this.#trees[method] = curr = new Route('');
         }
 
         const params = [];
@@ -106,7 +106,7 @@ export class Router {
         const segments = path.split('/').filter(Boolean);
         const matchingSegmets: string[] = [];
 
-        const q = [this.trees[method] || new Route('')];
+        const q = [this.#trees[method] || new Route('')];
         let curr: Route | undefined;
 
         let i = 0;
@@ -175,7 +175,7 @@ export class Router {
         (req as Request).filename = '';
 
         if (!route || !route.handler) {
-            const methods = Object.keys(this.trees).filter((m) => m !== method);
+            const methods = Object.keys(this.#trees).filter((m) => m !== method);
             for (let i = 0; i < methods.length; i++) {
                 const found = this.#find(methods[i], url);
                 if (found) {
