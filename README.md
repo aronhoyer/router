@@ -1,7 +1,9 @@
 # A simple Node.js router
 
 This router was made as an experiment to see if I could make a router that let me raw dog more of
-Node"s built-in modules in a "back to monkey" type effort.
+Node's built-in modules in a "back to monkey" type effort.
+
+Also, I've learned a bit about trees now (smile).
 
 Whereas libraries like Express, Koa and Hapi are entire server frameworks, this library is a router
 and nothing else. It was never meant to be something else and will never be anything else.
