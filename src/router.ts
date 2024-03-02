@@ -1,5 +1,6 @@
 import { IncomingMessage, STATUS_CODES, ServerResponse } from 'node:http';
 import { basename, extname } from 'node:path';
+import { Queue } from './queue';
 
 type Request = IncomingMessage & {
     params: Map<string, string>;
@@ -110,12 +111,14 @@ export class Router {
         const segments = path.split('/').filter(Boolean);
         const matchingSegmets: string[] = [];
 
-        const q = [this.#trees[method] || new Route('')];
+        const q = new Queue<Route>();
+        q.enqueue(this.#trees[method] || new Route(''));
+
         let curr: Route | undefined;
 
         let i = 0;
         while (q.length) {
-            curr = q.shift();
+            curr = q.deque();
 
             if (!segments[i]) {
                 break;
@@ -129,7 +132,7 @@ export class Router {
                     child.path.startsWith('*') ||
                     child.path === segments[i]
                 ) {
-                    q.push(child);
+                    q.enqueue(child);
                     matchingSegmets.push(segments[i]);
                 }
             }
@@ -178,6 +181,9 @@ export class Router {
         (req as Request).query = new URLSearchParams(query);
         (req as Request).filename = '';
 
+        // if a route is not found, check the other trees for a matching route
+        // if one is found, respond 405
+        // otherwise, respond 404
         if (!route || !route.handler) {
             const methods = Object.keys(this.#trees).filter((m) => m !== method);
             for (let i = 0; i < methods.length; i++) {
@@ -190,12 +196,14 @@ export class Router {
             return this.notFoundHandler.call(null, req as Request, res as Response);
         }
 
+        // get param values
         const urlSegments = url.split('/').filter(Boolean);
         for (let i = 0; i < route.params.length; i++) {
             const param = route.params[i];
             (req as Request).params.set(param.key, urlSegments[param.position]);
         }
 
+        // get filename if route has a wildcard
         if (route.path.startsWith('*')) {
             (req as Request).filename = extname(url) === extname(route.path) ? basename(url) : '';
         }
