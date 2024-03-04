@@ -1,0 +1,20 @@
+{
+  "name": "router-example-todo-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/main.js",
+  "keywords": [],
+  "author": "Aron Høyer <aron@hoyer.com>",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/main.ts"
+  },
+  "dependencies": {
+    "surrealdb.js": "^0.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
