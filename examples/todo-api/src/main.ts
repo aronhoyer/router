@@ -9,8 +9,8 @@ async function main() {
     const db = new Surreal();
 
     try {
-        await db.connect('ws://127.0.0.1:8081');
-        await db.use({ namespace: 'todos', database: 'todos' });
+        await db.connect(process.env.DB_URL);
+        await db.use({ namespace: process.env.DB_NAME, database: process.env.DB_NAME });
 
         router.post('/todos', (req, res) => {
             if (!req.headers['content-type']?.includes('application/json')) {
@@ -147,11 +147,13 @@ async function main() {
             });
         });
 
+        const PORT = Number(process.env.PORT) || 42069;
+
         server.on('listening', () => {
-            console.log('Server is listening on :42069');
+            console.log(`Server is listening on :${PORT}`);
         });
 
-        server.listen(42069);
+        server.listen(PORT);
     } catch (error) {
         console.error(error);
     }
