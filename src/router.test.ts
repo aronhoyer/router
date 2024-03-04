@@ -142,11 +142,24 @@ describe('Router Tests', () => {
             res.end();
         });
 
-        const res = await request('http://127.0.0.1:42069/api/v1/files/styles.css', 'GET');
+        const res = await request('http://127.0.0.1:42069/api/v1/files/styles.css');
 
         assert.strictEqual(res.statusCode, 200);
         assert.strictEqual(filename, 'styles.css');
         assert.strictEqual(isHandlerCalled, true);
+    });
+
+    test("should respond 404 extnames don't match", async () => {
+        let isHandlerCalled = false;
+        router.get('/api/v1/files/*.css', (req, res) => {
+            isHandlerCalled = true;
+            res.end();
+        });
+
+        const res = await request('http://127.0.0.1:42069/api/v1/files/styles.js');
+
+        assert.strictEqual(res.statusCode, 404);
+        assert.strictEqual(isHandlerCalled, false);
     });
 
     test('should handle not found route', async () => {
