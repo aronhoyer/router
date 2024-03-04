@@ -129,7 +129,7 @@ export class Router {
 
                 if (
                     child.path.startsWith(':') ||
-                    child.path.startsWith('*') ||
+                    (child.path.startsWith('*') && extname(path) === extname(child.path)) ||
                     child.path === segments[i]
                 ) {
                     q.enqueue(child);
@@ -167,6 +167,10 @@ export class Router {
         this.#add('put', path, handler);
     }
 
+    patch(path: string, handler: Handler) {
+        this.#add('patch', path, handler);
+    }
+
     delete(path: string, handler: Handler) {
         this.#add('delete', path, handler);
     }
@@ -188,7 +192,7 @@ export class Router {
             const methods = Object.keys(this.#trees).filter((m) => m !== method);
             for (let i = 0; i < methods.length; i++) {
                 const found = this.#find(methods[i], url);
-                if (found) {
+                if (found && found.handler) {
                     return this.methodNotAllowedHandler.call(null, req as Request, res as Response);
                 }
             }
