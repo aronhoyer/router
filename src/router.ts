@@ -2,15 +2,15 @@ import { IncomingMessage, STATUS_CODES, ServerResponse } from 'node:http';
 import { basename, extname } from 'node:path';
 import { Queue } from './queue';
 
-type Request = IncomingMessage & {
+export type Request = IncomingMessage & {
     params: Map<string, string>;
     query: URLSearchParams;
     filename: string;
 };
 
-type Response = ServerResponse<Request>;
+export type Response = ServerResponse<Request>;
 
-type Handler = (req: Request, res: Response) => void | Promise<void>;
+export type Handler = (req: Request, res: Response) => void | Promise<void>;
 
 class Route {
     // the path is a single segment of the provided path
