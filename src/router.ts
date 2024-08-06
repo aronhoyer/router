@@ -1,6 +1,5 @@
 import { IncomingMessage, STATUS_CODES, ServerResponse } from 'node:http';
 import { basename, extname } from 'node:path';
-import { Queue } from './queue';
 
 export type Request = IncomingMessage & {
     params: Map<string, string>;
@@ -111,14 +110,14 @@ export class Router {
         const segments = path.split('/').filter(Boolean);
         const matchingSegmets: string[] = [];
 
-        const q = new Queue<Route>();
-        q.enqueue(this.#trees[method] || new Route(''));
+        const queue = [];
+        queue.push(this.#trees[method] || new Route(''));
 
         let curr: Route | undefined;
 
         let i = 0;
-        while (q.length) {
-            curr = q.deque();
+        while (queue.length) {
+            curr = queue.shift();
 
             if (!segments[i]) {
                 break;
@@ -132,7 +131,7 @@ export class Router {
                     (child.path.startsWith('*') && extname(path) === extname(child.path)) ||
                     child.path === segments[i]
                 ) {
-                    q.enqueue(child);
+                    queue.push(child);
                     matchingSegmets.push(segments[i]);
                 }
             }
