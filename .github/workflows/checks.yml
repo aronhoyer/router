@@ -5,18 +5,14 @@ on:
     branches:
       - main
     paths:
-      - '**.ts'
-      - '**.js'
-    paths-ignore:
-      - 'examples/**'
+      - 'src/**.ts'
+      - 'src/**.js'
   pull_request:
     branches:
       - main
     paths:
-      - '**.ts'
-      - '**.js'
-    paths-ignore:
-      - 'examples/**'
+      - 'src/**.ts'
+      - 'src/**.js'
 jobs:
   setup:
     runs-on: ubuntu-latest
